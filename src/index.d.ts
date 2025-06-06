@@ -1,4 +1,5 @@
-import * as _trpc_server0 from "@trpc/server";
+import * as _trpc_server_unstable_core_do_not_import0 from "@trpc/server/unstable-core-do-not-import";
+import * as _trpc_server1 from "@trpc/server";
 
 //#region src/index.d.ts
 interface Context {
@@ -7,108 +8,56 @@ interface Context {
     name: string;
   };
 }
-declare const appRouter: _trpc_server0.CreateRouterInner<_trpc_server0.RootConfig<{
+declare const appRouter: _trpc_server_unstable_core_do_not_import0.BuiltRouter<{
   ctx: Context;
   meta: object;
-  errorShape: _trpc_server0.DefaultErrorShape;
-  transformer: _trpc_server0.DefaultDataTransformer;
-}>, {
-  greeting: _trpc_server0.BuildProcedure<"query", {
-    _config: _trpc_server0.RootConfig<{
-      ctx: Context;
-      meta: object;
-      errorShape: _trpc_server0.DefaultErrorShape;
-      transformer: _trpc_server0.DefaultDataTransformer;
-    }>;
-    _meta: object;
-    _ctx_out: Context;
-    _input_in: {
+  errorShape: _trpc_server_unstable_core_do_not_import0.DefaultErrorShape;
+  transformer: false;
+}, _trpc_server_unstable_core_do_not_import0.DecorateCreateRouterOptions<{
+  greeting: _trpc_server1.TRPCQueryProcedure<{
+    input: {
       name: string;
     };
-    _input_out: {
-      name: string;
+    output: {
+      message: string;
+      timestamp: string;
     };
-    _output_in: typeof _trpc_server0.unsetMarker;
-    _output_out: typeof _trpc_server0.unsetMarker;
-  }, {
-    message: string;
-    timestamp: string;
+    meta: object;
   }>;
-  getUserInfo: _trpc_server0.BuildProcedure<"query", {
-    _config: _trpc_server0.RootConfig<{
-      ctx: Context;
-      meta: object;
-      errorShape: _trpc_server0.DefaultErrorShape;
-      transformer: _trpc_server0.DefaultDataTransformer;
-    }>;
-    _meta: object;
-    _ctx_out: {
+  getUserInfo: _trpc_server1.TRPCQueryProcedure<{
+    input: void;
+    output: {
       user: {
         id: string;
         name: string;
       };
+      serverTime: string;
     };
-    _input_in: typeof _trpc_server0.unsetMarker;
-    _input_out: typeof _trpc_server0.unsetMarker;
-    _output_in: typeof _trpc_server0.unsetMarker;
-    _output_out: typeof _trpc_server0.unsetMarker;
-  }, {
-    user: {
-      id: string;
+    meta: object;
+  }>;
+  updateUserName: _trpc_server1.TRPCMutationProcedure<{
+    input: {
       name: string;
     };
-    serverTime: string;
-  }>;
-  updateUserName: _trpc_server0.BuildProcedure<"mutation", {
-    _config: _trpc_server0.RootConfig<{
-      ctx: Context;
-      meta: object;
-      errorShape: _trpc_server0.DefaultErrorShape;
-      transformer: _trpc_server0.DefaultDataTransformer;
-    }>;
-    _meta: object;
-    _ctx_out: {
+    output: {
+      success: boolean;
       user: {
-        id: string;
         name: string;
+        id: string;
       };
     };
-    _input_in: {
-      name: string;
-    };
-    _input_out: {
-      name: string;
-    };
-    _output_in: typeof _trpc_server0.unsetMarker;
-    _output_out: typeof _trpc_server0.unsetMarker;
-  }, {
-    success: boolean;
-    user: {
-      name: string;
-      id: string;
-    };
+    meta: object;
   }>;
-  riskOperation: _trpc_server0.BuildProcedure<"mutation", {
-    _config: _trpc_server0.RootConfig<{
-      ctx: Context;
-      meta: object;
-      errorShape: _trpc_server0.DefaultErrorShape;
-      transformer: _trpc_server0.DefaultDataTransformer;
-    }>;
-    _meta: object;
-    _ctx_out: Context;
-    _input_in: {
+  riskOperation: _trpc_server1.TRPCMutationProcedure<{
+    input: {
       action: "safe" | "risky" | "forbidden";
     };
-    _input_out: {
-      action: "safe" | "risky" | "forbidden";
+    output: {
+      result: string;
     };
-    _output_in: typeof _trpc_server0.unsetMarker;
-    _output_out: typeof _trpc_server0.unsetMarker;
-  }, {
-    result: string;
+    meta: object;
   }>;
-}>;
+}>>;
 type AppRouter = typeof appRouter;
 //#endregion
 export { AppRouter };
