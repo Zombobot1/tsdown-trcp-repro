@@ -1,6 +1,40 @@
 import { initTRPC } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { Pool } from "pg";
+
+// Initialize PostgreSQL connection pool
+export const db = new Pool({
+  connectionString:
+    process.env.DATABASE_URL || "postgresql://localhost:5432/myapp",
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
+});
+
+// Database helper functions
+export const dbHelpers = {
+  async getUser(id: string) {
+    const result = await db.query("SELECT * FROM users WHERE id = $1", [id]);
+    return result.rows[0];
+  },
+
+  async createUser(name: string, email: string) {
+    const result = await db.query(
+      "INSERT INTO users (name, email, created_at) VALUES ($1, $2, NOW()) RETURNING *",
+      [name, email]
+    );
+    return result.rows[0];
+  },
+
+  async updateUser(id: string, name: string) {
+    const result = await db.query(
+      "UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2 RETURNING *",
+      [name, id]
+    );
+    return result.rows[0];
+  },
+};
 
 // Initialize tRPC
 const t = initTRPC.create();
@@ -47,6 +81,52 @@ const appRouter = trpc.router({
       };
     }),
 
+  // Database procedures
+  createUser: trpc.procedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(100),
+        email: z.string().email(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const user = await dbHelpers.createUser(input.name, input.email);
+        return {
+          success: true,
+          user,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create user",
+          cause: error,
+        });
+      }
+    }),
+
+  getUser: trpc.procedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        const user = await dbHelpers.getUser(input.id);
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+        return { user };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch user",
+          cause: error,
+        });
+      }
+    }),
+
   // Protected user info procedure
   getUserInfo: authenticatedProcedure.query(({ ctx }) => {
     return {
@@ -55,10 +135,10 @@ const appRouter = trpc.router({
     };
   }),
 
-  // Example mutation with error handling
+  // Example mutation with error handling and database integration
   updateUserName: authenticatedProcedure
     .input(z.object({ name: z.string().min(1).max(50) }))
-    .mutation(({ input, ctx }) => {
+    .mutation(async ({ input, ctx }) => {
       if (input.name.includes("admin")) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -66,15 +146,38 @@ const appRouter = trpc.router({
         });
       }
 
-      // Simulate updating user name
-      return {
-        success: true,
-        user: {
-          ...ctx.user,
-          name: input.name,
-        },
-      };
+      try {
+        const updatedUser = await dbHelpers.updateUser(ctx.user.id, input.name);
+        return {
+          success: true,
+          user: updatedUser,
+        };
+      } catch (error) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to update user",
+          cause: error,
+        });
+      }
     }),
+
+  // Database health check
+  healthCheck: trpc.procedure.query(async () => {
+    try {
+      const result = await db.query("SELECT NOW() as server_time");
+      return {
+        status: "healthy",
+        database: "connected",
+        serverTime: result.rows[0].server_time,
+      };
+    } catch (error) {
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Database connection failed",
+        cause: error,
+      });
+    }
+  }),
 
   // Example procedure that might throw various errors
   riskOperation: trpc.procedure
@@ -110,5 +213,8 @@ const appRouter = trpc.router({
 
 // Export type router for client
 export type AppRouter = typeof appRouter;
+
+// Export the router
+export { appRouter };
 
 // Example usage function
